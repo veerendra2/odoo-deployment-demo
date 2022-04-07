@@ -1,0 +1,4 @@
+# Postgresql Credentials
+db_name: "odoodb"
+db_username: "odoo"
+db_password: "wKjA6kwb"

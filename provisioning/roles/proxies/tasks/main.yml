@@ -1,0 +1,35 @@
+- name: Running update
+  shell: apt-get update
+  args:
+    warn: no
+
+- name: Installing nginx server
+  apt:
+    name: nginx
+    state: present
+
+- name: Generating nginx configuration
+  template:
+    src: proxy-cache.conf.j2
+    dest: /etc/nginx/sites-available/proxy-cache.conf
+
+- name: Disabling default sites
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Creating cache directory
+  file:
+    path: /var/nginx/cache
+    state: directory
+
+- name: Enabling proxy config
+  file:
+    src: /etc/nginx/sites-available/proxy-cache.conf
+    dest: /etc/nginx/sites-enabled/proxy-cache.conf
+    state: link
+
+- name: Restating nginx server
+  systemd:
+    name: nginx
+    state: restarted

@@ -1,0 +1,22 @@
+- name: Copying node_exporter binary file
+  copy:
+    src: node_exporter
+    dest: /usr/sbin/
+
+- name: Copying systemd unit file
+  copy:
+    src: node_exporter.service
+    dest: /etc/systemd/system/
+
+- name: Creating node_exporter user
+  user:
+    name: node_exporter
+    shell: /sbin/nologin
+
+- name: Starting node_exporter deamon
+  systemd:
+    name: node_exporter
+    state: started
+    enabled: yes
+
+- debug: msg="node_exported daemon start on TCP Port -> 9100"

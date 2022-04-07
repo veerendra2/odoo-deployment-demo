@@ -1,0 +1,2 @@
+- import_tasks: node_exporter.yml
+  tags: always

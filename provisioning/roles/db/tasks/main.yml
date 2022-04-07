@@ -1,0 +1,39 @@
+- name: Adding repository
+  copy:
+    dest: /etc/apt/sources.list.d/postgresql.list
+    content: |
+      deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main
+  tags: always
+
+- name: Adding signing key
+  shell: wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add -
+  args:
+    warn: no
+  tags: always
+
+- name: Running update
+  shell: apt-get update
+  args:
+    warn: no
+  tags: always
+
+- name: Installing Postgresql packages
+  apt:
+    name:
+      - postgresql-9.6
+      - postgresql-contrib-9.6
+    update_cache: yes
+  tags: always
+
+- name: Starting Postgresql daemon
+  systemd:
+    name: postgresql
+    state: started
+    enabled: yes
+  tags: always
+
+- import_tasks: master.yml
+  tags: master
+
+- import_tasks: slave.yml
+  tags: slave

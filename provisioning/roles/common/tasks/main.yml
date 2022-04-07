@@ -1,0 +1,10 @@
+- name: Configuring DNS
+  copy:
+    dest: /etc/resolvconf/resolv.conf.d/base
+    content: |
+      nameserver 8.8.8.8
+  tags: always
+
+- name: Updating DNS config
+  shell: resolvconf -u
+  tags: always

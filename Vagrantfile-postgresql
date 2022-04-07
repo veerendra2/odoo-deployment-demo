@@ -1,0 +1,38 @@
+# Author: Veerendra K
+# Description: Spawns ProgreSQL VMs
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/xenial64"
+
+  config.vm.define "master", primary: true do |server|
+    server.vm.provider "virtualbox" do |v|
+       v.name = "PG-Master"
+    end
+    server.vm.hostname = "pg-master"
+    server.vm.network "private_network", ip: "192.168.99.2"
+
+    server.vm.provision "ansible" do |ansible|
+      ansible.compatibility_mode = "2.0"
+      ansible.playbook = "provisioning/postgresql.yml"
+      ansible.tags = "master"
+      ansible.become = true
+      ansible.raw_arguments= ["-e master=192.168.99.2", "-e slave=192.168.99.3"]
+    end
+  end
+
+  config.vm.define "slave" do |server|
+    server.vm.provider "virtualbox" do |v|
+       v.name = "PG-Slave"
+    end
+    server.vm.hostname = "pg-slave"
+    server.vm.network "private_network", ip: "192.168.99.3"
+    server.vm.provision "ansible" do |ansible|
+      ansible.compatibility_mode = "2.0"
+      ansible.playbook = "provisioning/postgresql.yml"
+      ansible.tags = "slave"
+      ansible.become = true
+      ansible.raw_arguments= ["-e master=192.168.99.2", "-e slave=192.168.99.3"]
+    end
+  end
+
+end

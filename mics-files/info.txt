@@ -1,0 +1,103 @@
+ODOO App Deployment (Initial Idea)
+==================================
+
+1. Vagrant to provision VMs (KVM Hypervisor or VirtualBox)
+2. Ansible to config/install packages
+3. Prometheus monitoring
+
+
+Vagrant(VM)
+===========
+* PostgreSQL Instanaces - 2 VMs [COMPLETED]
+* Nginx Instances - 2 VMs
+
+Docker(K8s)
+===========
+* Odoo App - 3 Conainers [COMPLETED]
+
+Prometheus Monitoring
+=====================
+* Node Exporter for VMs [COMPLETED]
+* cAdvisor for containers [COMPLETED]
+* Seperate instance for Prometheus server?
+
+Other Points
+============
+* ConfigMaps to store config [DONE]
+* Netwoking - All instances should be in same subnet. Need to check on VirtualBox virtual network [COMPLETED]
+* jinja templates for Vagrantfile, k8s manifest files
+
+Postgress Installation [DONE]
+* Configure DNS
+$ echo "nameserver 8.8.8.8" | sudo tee /etc/resolvconf/resolv.conf.d/base
+$ sudo resolvconf -u
+
+
+VAGRANT_VAGRANTFILE=Vagrantfile-nginx vagrant up
+VAGRANT_VAGRANTFILE=Vagrantfile-postgresql vagrant up
+
+Get logs of all app pods
+for x in `kubectl get pods | awk '{print $1}' | tail -n+2`;do kubectl logs $x; done
+
+
+1. Verify packages
+2. Get Subnet and pick ips x
+3. Start Postgresql VMS
+4. Start minikube cluster
+5. Get cluster ip
+6. Deploy oodo App and Prometheus server
+7. Start nginx VMs
+
+
+
+
+
+ASCII Diagram1
+
+              +-------------------------+
+   +--------+-+       NAT/Internet      +------+
+   |        | +---------+--------+------+      |
+   |        |           |        |             |
+   |        |           |        |             |
+   |        |           |        |     +-------+---------+
++--+--+  +--+--+     +--+--+  +--+--+  |                 |
+|     |  |     |     |     |  |     |  | Minikube Cluster|
+| P1  |  | P2  |     | N1  |  | N2  |  |                 |
+|     |  |     |     |     |  |     |  |                 |
++--+--+  +--+--+     +--+--+  +--+--+  |                 |
+   |        |           |        |     +-------+---------+
+   |        |           |        |             |
+   |        |           |        |             |
+   |        |  +--------+--------+------+      |
+   +--------+--+  VirtualBox vboxnet1   +------+
+               +------------------------+
+
+ASCII Diagram2
+
+    +------+   +------+
+    |      |   |      |
+    |  P1  <--->  P2  |
+    |      |   |      |
+    +---+--+   +---+--+
+        |          |
+  +-----+------+---+-------+
+  |            |           |
++-+----+   +---+--+   +----+-+
+|      |   |      |   |      |
+| App  |   | App  |   | APP  |
+|      |   |      |   |      |
+|      |   |      |   |      |
++-+----+   +---+--+   +----+-+
+  |            |           |
+  +-----+------+----+------+
+        |           |
+        |           |
+     +--+---+    +--+---+
+     |      |    |      |
+     |  N1  |    |  N2  |
+     |      |    |      |
+     |      |    |      |
+     +---^--+    +---^--+
+         |           |
+         |           |
+         +           +

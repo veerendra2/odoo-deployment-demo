@@ -1,0 +1,41 @@
+- name: Configuring Postgresql
+  lineinfile:
+    path: /etc/postgresql/9.6/main/postgresql.conf
+    line: |
+      listen_addresses = '{{ master }}'
+      wal_level = hot_standby
+      synchronous_commit = local
+      archive_mode = on
+      archive_command = 'cp %p /var/lib/postgresql/9.6/main/archive/%f'
+      max_wal_senders = 2
+      wal_keep_segments = 10
+      synchronous_standby_names = 'pgslave001'
+
+- name: Creating archive directory
+  file:
+    path: /var/lib/postgresql/9.6/main/archive/
+    state: directory
+    mode: 0700
+    owner: postgres
+    group: postgres
+
+- name: Configuring Postgresql HA
+  lineinfile:
+    path: /etc/postgresql/9.6/main/pg_hba.conf
+    line: |
+      host    all             all              0.0.0.0/0                  md5
+      host    replication     replica          {{ master }}/32            md5
+      host    replication     replica          {{ slave }}/32             md5
+
+- name: Restarting postgresql
+  systemd:
+    name: postgresql
+    state: restarted
+
+- name: Creating 'replica' user
+  become_user: postgres
+  shell: psql -c "CREATE USER replica REPLICATION LOGIN ENCRYPTED PASSWORD 'aqwe123@'"
+
+- name: Creating DB and User
+  become_user: postgres
+  shell: psql -c "CREATE ROLE odoo WITH CREATEDB LOGIN PASSWORD 'odoo'"

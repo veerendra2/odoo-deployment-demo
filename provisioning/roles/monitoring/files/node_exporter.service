@@ -1,0 +1,10 @@
+[Unit]
+Description=Node Exporter
+Documentation=https://github.com/prometheus/node_exporter/tree/master/examples/systemd
+
+[Service]
+User=node_exporter
+ExecStart=/usr/sbin/node_exporter --collector.textfile.directory /var/lib/node_exporter/textfile_collector
+
+[Install]
+WantedBy=multi-user.target

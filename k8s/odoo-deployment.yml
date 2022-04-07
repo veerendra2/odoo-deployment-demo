@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postsecret
+  namespace: default
+type: Opaque
+data:
+  username: b2Rvbw==    #odoo
+  password: b2Rvbw==  #odoo
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: odoo
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: odoo
+      tier: frontend
+  replicas: 3
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: odoo
+        tier: frontend
+    spec:
+      containers:
+      - name: odoo
+        image: veerendrav2/odoo-test
+        volumeMounts:
+        - name: odoo-config-volume
+          mountPath: /etc/odoo/odoo.conf
+          subPath: odoo.conf
+        env:
+        - name: PORT
+          value: "5432"
+        - name: HOST
+          value: "192.168.99.2"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postsecret
+              key: username
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postsecret
+              key: password
+        ports:
+        - name: http
+          containerPort: 8069
+      volumes:
+      - name: odoo-config-volume
+        configMap:
+          name: odoo-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: odoo-service
+  namespace: default
+spec:
+  type: NodePort
+  ports:
+    - nodePort: 32242
+      port: 80
+      targetPort: 8069
+      protocol: TCP
+  selector:
+      app: odoo
+      tier: frontend
+

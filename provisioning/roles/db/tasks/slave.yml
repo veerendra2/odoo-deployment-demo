@@ -1,0 +1,50 @@
+- name: Stopping Postgresql daemon
+  systemd:
+    name: postgresql
+    state: stopped
+
+- name: Configuring Postgresql
+  lineinfile:
+    path: /etc/postgresql/9.6/main/postgresql.conf
+    line: |
+      listen_addresses = '{{ slave }}'
+      wal_level = hot_standby
+      synchronous_commit = local
+      max_wal_senders = 2
+      wal_keep_segments = 10
+      synchronous_standby_names = 'pgslave001'
+      hot_standby = on
+
+- name: Creating backup
+  become_user: postgres
+  shell: mv /var/lib/postgresql/9.6/main /var/lib/postgresql/9.6/main_backup
+
+- name: Creating main directory
+  file:
+    path: /var/lib/postgresql/9.6/main
+    state: directory
+    mode: 0700
+    owner: postgres
+    group: postgres
+
+- name: Running pg_basebackup
+  become_user: postgres
+  shell: export PGPASSWORD=aqwe123@;pg_basebackup -h {{ master }} -U replica -D /var/lib/postgresql/9.6/main -P --xlog
+
+- name: Configuring recovery
+  lineinfile:
+    path: /var/lib/postgresql/9.6/main/recovery.conf
+    create: yes
+    owner: postgres
+    group: postgres
+    mode: 0600
+    line: |
+      standby_mode = 'on'
+      primary_conninfo = 'host={{ master }} port=5432 user=replica password=aqwe123@ application_name=pgslave001'
+      restore_command = 'cp /var/lib/postgresql/9.6/main/archive/%f %p'
+      trigger_file = '/tmp/postgresql.trigger.5432'
+
+- name: Starting postgresql daemon
+  systemd:
+    name: postgresql
+    state: started
